@@ -1,0 +1,225 @@
+{
+  "$comment": [
+    "===========================================================================",
+    " PBLOG 统一配置文件 —— 前端、管理端、后端共用这一份。",
+    "",
+    " 修改后何时生效：",
+    "   sites.*           → 需重建 web 镜像（前端构建时注入）：",
+    "                       docker compose up -d --build web",
+    "   backend.*         → 重启后端：docker compose restart server",
+    "   database.*        → 重启后端（密码等只在首次建卷时由 MySQL 采用）",
+    "   也可在「管理端 → 站点设置」中改，数据库里的值优先于本文件。",
+    "",
+    " 每个值都支持环境变量插值：",
+    "   ${NAME}          取环境变量，未设置则该键被忽略（回落到代码默认值）",
+    "   ${NAME:-默认值}  取环境变量，未设置则用默认值",
+    "",
+    " 生产环境请务必通过 .env 覆盖以下敏感项：",
+    "   PBLOG_JWT_SECRET / PBLOG_DB_PASSWORD / PBLOG_ADMIN_PASSWORD",
+    "===========================================================================",
+    "",
+    "1) sites : 站点外观与信息",
+    "   frontend.*   前台标题、描述、作者、页脚等",
+    "   admin.*      管理端标题与名称",
+    "   theme.*      默认主题（访客可在前台「外观设置」面板覆盖）",
+    "   themeColors  配色方案列表，显示为可点选色块，键名任意",
+    "   nav          手写导航项（独立页面会自动追加在后面，勿在此重复）",
+    "   social       页脚与关于页的社交链接",
+    "   plugins      前台功能开关",
+    "",
+    "2) backend : 后端服务地址、CORS、JWT、上传",
+    "   publicUrl 是「浏览器」访问后端的地址，不是容器内网地址。",
+    "",
+    "3) database : MySQL 连接（仅后端使用）",
+    "4) features : 功能级开关与限流",
+    "5) adminDefaults : 首次 seed 创建的管理员"
+  ],
+  "sites": {
+    "frontend": {
+      "title": "折光日志",
+      "subtitle": "Refraction Log",
+      "description": "一个关于工程、设计与长期主义的地方。",
+      "keywords": [
+        "个人博客",
+        "工程",
+        "设计",
+        "笔记"
+      ],
+      "logoText": "折光",
+      "logoImage": "",
+      "favicon": "",
+      "author": "林深",
+      "authorBio": "后端工程师 / 业余摄影 / 相信长期主义。喜欢把复杂的东西拆开看清楚，再把简陋的东西做好看。",
+      "avatar": "",
+      "footerText": "© {year} 折光日志 · 由 PBLOG 驱动",
+      "icp": "",
+      "postsPerPage": 8,
+      "homeLayout": "hero-list"
+    },
+    "admin": {
+      "title": "折光日志 · 控制台",
+      "logoText": "折光",
+      "shortName": "PBLOG"
+    },
+    "theme": {
+      "mode": "dark",
+      "skin": "classic",
+      "skinLocked": false,
+      "accent": "#6ee7b7",
+      "accentSoft": "#34d399",
+      "radius": 16,
+      "fontFamily": "\"Inter\", \"Noto Sans SC\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+      "monoFontFamily": "\"JetBrains Mono\", \"SFMono-Regular\", Consolas, monospace"
+    },
+    "themeColors": {
+      "翡翠": {
+        "accent": "#6ee7b7",
+        "accentSoft": "#34d399"
+      },
+      "靛蓝": {
+        "accent": "#818cf8",
+        "accentSoft": "#6366f1"
+      },
+      "琥珀": {
+        "accent": "#fbbf24",
+        "accentSoft": "#f59e0b"
+      },
+      "玫瑰": {
+        "accent": "#fb7185",
+        "accentSoft": "#f43f5e"
+      },
+      "青色": {
+        "accent": "#67e8f9",
+        "accentSoft": "#22d3ee"
+      },
+      "石板": {
+        "accent": "#cbd5e1",
+        "accentSoft": "#94a3b8"
+      }
+    },
+    "nav": [
+      {
+        "label": "文章",
+        "to": "/"
+      },
+      {
+        "label": "归档",
+        "to": "/archive"
+      },
+      {
+        "label": "标签",
+        "to": "/tags"
+      },
+      {
+        "label": "留言墙",
+        "to": "/guestbook"
+      },
+      {
+        "label": "聊天室",
+        "to": "/chat"
+      }
+    ],
+    "social": [
+      {
+        "label": "GitHub",
+        "href": "https://github.com/"
+      },
+      {
+        "label": "邮箱",
+        "href": "mailto:hi@example.com"
+      },
+      {
+        "label": "RSS",
+        "href": "/api/rss"
+      }
+    ],
+    "plugins": {
+      "comments": true,
+      "search": true,
+      "viewCounter": true,
+      "tableOfContents": true,
+      "readingTime": true,
+      "backToTop": true,
+      "rss": true,
+      "sitemap": true,
+      "likes": true,
+      "chat": true,
+      "guestbook": true,
+      "music": true,
+      "member": true
+    },
+    "music": {
+      "enabled": false,
+      "provider": "netease",
+      "playlistId": "",
+      "songId": "",
+      "theme": "#6ee7b7",
+      "autoPlay": false,
+      "homeOnly": false,
+      "defaultOpen": false
+    }
+  },
+  "backend": {
+    "host": "${PBLOG_HOST:-0.0.0.0}",
+    "port": "${PBLOG_PORT:-8080}",
+    "publicUrl": "${PBLOG_PUBLIC_URL:-http://localhost}",
+    "trustProxy": true,
+    "cors": [
+      "${PBLOG_FRONTEND_URL:-http://localhost}",
+      "${PBLOG_ADMIN_URL:-http://localhost/admin}"
+    ],
+    "jwt": {
+      "secret": "${PBLOG_JWT_SECRET:-DEV_ONLY_SECRET_CHANGE_IN_PRODUCTION}",
+      "expiresIn": "7d"
+    },
+    "upload": {
+      "dir": "${PBLOG_UPLOAD_DIR:-./data/uploads}",
+      "maxSizeMB": 8,
+      "allowedTypes": [
+        "image/jpeg",
+        "image/png",
+        "image/webp",
+        "image/gif",
+        "image/svg+xml"
+      ]
+    },
+    "requestTimeoutMs": 30000
+  },
+  "database": {
+    "host": "${PBLOG_DB_HOST:-127.0.0.1}",
+    "port": "${PBLOG_DB_PORT:-3306}",
+    "user": "${PBLOG_DB_USER:-pblog}",
+    "password": "${PBLOG_DB_PASSWORD:-pblog_pass}",
+    "database": "${PBLOG_DB_NAME:-pblog}",
+    "connectionLimit": 10,
+    "timezone": "+08:00",
+    "charset": "utf8mb4"
+  },
+  "features": {
+    "allowRegistration": false,
+    "postLikes": true,
+    "commentModeration": true,
+    "rateLimit": {
+      "windowMs": 60000,
+      "max": 120
+    },
+    "cacheTtlSeconds": 60
+  },
+  "adminDefaults": {
+    "username": "${PBLOG_ADMIN_USER:-admin}",
+    "password": "${PBLOG_ADMIN_PASSWORD:-CHANGE_ME_BEFORE_DEPLOY}",
+    "email": "admin@example.com",
+    "displayName": "管理员"
+  },
+  "mail": {
+    "enabled": false,
+    "host": "",
+    "port": 465,
+    "secure": true,
+    "user": "",
+    "pass": "${PBLOG_SMTP_PASS:-}",
+    "fromName": "折光日志",
+    "fromEmail": "",
+    "requireVerify": true
+  }
+}

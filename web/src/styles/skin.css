@@ -1,0 +1,573 @@
+/* ============================================================
+ * 界面风格（Skin）
+ *
+ * 设计原则 —— 与配色系统严格正交：
+ *
+ *   配色系统管的是「颜色」：--accent / --bg / --text / --surface-line ...
+ *   风格系统管的是「质感」：模糊强度、饱和度、边框、阴影、高光、按压反馈
+ *
+ *   四种风格只改变下面这组 --sx-* 变量和少量材质规则，
+ *   绝不写死任何具体颜色（需要颜色时一律用 color-mix 从 --bg / --accent 派生）。
+ *   因此换风格不会破坏用户选的配色，换配色也不会破坏风格。
+ *
+ * 切换方式：<html data-skin="acrylic|liquid|material|classic">
+ *   由 theme.js 的 applyTheme() 写入，与 data-theme（明暗）并列。
+ *
+ * 变量一览（都有兜底值，未设置 data-skin 时等同 classic）：
+ *   --sx-blur        表面背景模糊半径
+ *   --sx-saturate    表面背景饱和度增强
+ *   --sx-surface     卡片/面板底色（用 color-mix 从 --bg 派生）
+ *   --sx-surface-hi  悬停态底色
+ *   --sx-border      边框色
+ *   --sx-border-w    边框宽度
+ *   --sx-radius      表面圆角（独立于用户的 --radius，避免被内联样式覆盖）
+ *   --sx-radius-sm   小圆角（输入框等）
+ *   --sx-solid       有背景图时卡片底色的实度（不透明百分比）
+ *   --sx-shadow      常规投影
+ *   --sx-shadow-hi   悬停投影
+ *   --sx-inset       内侧高光（玻璃/亚克力的「厚度感」）
+ *   --sx-noise       噪点纹理不透明度（亚克力的磨砂颗粒）
+ *   --sx-sheen       顶部一线反光强度
+ *   --sx-press       按下缩放
+ *   --sx-sheen-angle 反光渐变角度
+ * ============================================================ */
+
+/* ---------------- 默认（原有风格）：无模糊、扁平、细边框 ---------------- */
+:root,
+[data-skin='classic'] {
+  --sx-blur: 12px;
+  --sx-saturate: 1;
+  --sx-surface: var(--bg-card);
+  --sx-surface-hi: var(--bg-card-hover);
+  --sx-border: var(--surface-line);
+  --sx-border-hi: var(--surface-line-strong);
+  --sx-border-w: 1px;
+  --sx-shadow: none;
+  --sx-shadow-hi: 0 20px 44px -28px rgba(0, 0, 0, 0.6);
+  --sx-inset: none;
+  --sx-solid: 86%;          /* 原有风格：沿用旧的 86% 实度 */
+  --sx-noise: 0;
+  --sx-sheen: 0;
+  --sx-press: 0.97;
+  --sx-sheen-angle: 120deg;
+}
+
+/* ============================================================
+ * 亚克力（Windows Acrylic / Fluent）
+ *   特点：半透明磨砂 + 细噪点颗粒 + 内侧 1px 高光形成「板材厚度」
+ *         边框偏冷灰，投影柔和扩散，方形偏中等圆角
+ * ============================================================ */
+[data-skin='acrylic'] {
+  --sx-blur: 30px;
+  --sx-saturate: 1.8;
+  /* 用 --bg 派生半透明底，避免写死颜色 */
+  --sx-surface: color-mix(in oklab, var(--bg) 62%, transparent);
+  --sx-surface-hi: color-mix(in oklab, var(--bg) 52%, transparent);
+  --sx-border: color-mix(in oklab, var(--text) 14%, transparent);
+  --sx-border-hi: color-mix(in oklab, var(--text) 26%, transparent);
+  --sx-border-w: 1px;
+  --sx-shadow: 0 8px 28px -14px rgba(0, 0, 0, 0.55);
+  --sx-shadow-hi: 0 16px 42px -18px rgba(0, 0, 0, 0.62);
+  /* 顶部内侧高光：亚克力板材的受光边 */
+  --sx-inset: inset 0 1px 0 0 color-mix(in oklab, var(--text) 12%, transparent);
+  --sx-noise: 0.05;
+  --sx-solid: 72%;          /* 有背景图时卡片实度：亚克力偏实，保证可读 */
+  --sx-sheen: 0.5;
+  --sx-sheen-h: 30%;
+  --sx-press: 0.985;
+  --sx-sheen-angle: 165deg;
+}
+
+/* ============================================================
+ * 液态玻璃（iOS Liquid Glass）
+ *   特点：更强模糊与饱和、边缘高光「液态」折射感、大圆角
+ *         投影通透（浅淡、层次多），按下有轻微「回弹」
+ * ============================================================ */
+[data-skin='liquid'] {
+  --sx-blur: 42px;
+  --sx-saturate: 2.2;
+  --sx-surface: color-mix(in oklab, var(--bg) 48%, transparent);
+  --sx-surface-hi: color-mix(in oklab, var(--bg) 38%, transparent);
+  --sx-border: color-mix(in oklab, var(--text) 20%, transparent);
+  --sx-border-hi: color-mix(in oklab, var(--accent) 42%, transparent);
+  --sx-border-w: 1px;
+  /* 双层投影：贴边一层紧实 + 外围一层扩散，形成玻璃悬空感 */
+  --sx-shadow: 0 2px 6px -2px rgba(0, 0, 0, 0.28), 0 18px 46px -24px rgba(0, 0, 0, 0.5);
+  --sx-shadow-hi: 0 4px 10px -3px rgba(0, 0, 0, 0.3), 0 26px 58px -26px rgba(0, 0, 0, 0.55);
+  --sx-inset:
+    inset 0 1px 0 0 color-mix(in oklab, var(--text) 22%, transparent),
+    inset 0 -1px 0 0 color-mix(in oklab, var(--text) 8%, transparent);
+  --sx-noise: 0;
+  --sx-solid: 58%;          /* 玻璃最通透，背景能透上来 */
+  --sx-sheen: 0.75;
+  --sx-sheen-h: 38%;
+  --sx-press: 0.968;
+  --sx-sheen-angle: 120deg;
+}
+
+/* ============================================================
+ * Material Design（Android / Material 3）
+ *   特点：不透明表面 + 明显的表面色阶（surface container）
+ *         大圆角、无边框（靠色阶区分层次）、投影克制、状态层叠加
+ * ============================================================ */
+[data-skin='material'] {
+  --sx-blur: 0px;
+  --sx-saturate: 1;
+  /* Material 用不透明表面色，从 --bg-elev 派生并轻微抬高亮度 */
+  --sx-surface: color-mix(in oklab, var(--bg-elev) 88%, var(--text) 5%);
+  --sx-surface-hi: color-mix(in oklab, var(--bg-elev) 80%, var(--text) 10%);
+  /* M3 主张无边框，用色阶区分；这里留极淡的一层维持可读性 */
+  --sx-border: color-mix(in oklab, var(--text) 6%, transparent);
+  --sx-border-hi: color-mix(in oklab, var(--text) 12%, transparent);
+  --sx-border-w: 0px;
+  --sx-shadow: 0 1px 2px rgba(0, 0, 0, 0.16), 0 2px 6px rgba(0, 0, 0, 0.1);
+  --sx-shadow-hi: 0 2px 4px rgba(0, 0, 0, 0.18), 0 6px 16px rgba(0, 0, 0, 0.14);
+  --sx-inset: none;
+  --sx-solid: 96%;          /* Material 表面不透明 */
+  --sx-noise: 0;
+  --sx-sheen: 0;
+  --sx-press: 0.96;
+  --sx-sheen-angle: 120deg;
+}
+
+/* ============================================================
+ * 质感应用：所有风格共用同一批选择器，只读变量
+ * ============================================================ */
+
+/* ---------------- 卡片 / 面板 ---------------- */
+.card,
+.panel,
+.gb-tree,
+.member-menu__panel,
+.search-overlay__panel {
+  background: var(--sx-surface);
+  border: var(--sx-border-w) solid var(--sx-border);
+  border-radius: var(--sx-radius);
+  box-shadow: var(--sx-shadow), var(--sx-inset);
+  backdrop-filter: blur(var(--sx-blur)) saturate(var(--sx-saturate));
+  -webkit-backdrop-filter: blur(var(--sx-blur)) saturate(var(--sx-saturate));
+  transition:
+    background var(--dur) var(--ease),
+    border-color var(--dur) var(--ease),
+    box-shadow var(--dur) var(--ease),
+    transform var(--dur) var(--ease);
+}
+
+.card--link:hover,
+.panel--link:hover {
+  background: var(--sx-surface-hi);
+  border-color: var(--sx-border-hi);
+  box-shadow: var(--sx-shadow-hi), var(--sx-inset);
+}
+
+/* 亚克力：叠一层极细噪点，做出磨砂板材的颗粒感。
+   用 ::before，与 ::after（顶部反光）互不干扰。
+   注：卡片内部若有绝对定位的装饰元素，注意 z-index 别被这层压住
+   —— 这层 pointer-events: none，只影响绘制，不挡交互。 */
+[data-skin='acrylic'] .card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: var(--sx-noise);
+  background-image:
+    radial-gradient(circle at 1px 1px, var(--text) 0.5px, transparent 0.5px);
+  background-size: 2px 2px;
+  mix-blend-mode: overlay;
+}
+
+/* 顶部反光：所有风格共用同一条规则，靠 --sx-sheen 控制强度。
+   classic / material 下 --sx-sheen 为 0，等价于原有关闭状态；
+   亚克力给一半，液态玻璃给满。
+   反光用「自上而下渐隐」的纵向渐变（不是斜向），
+   这样不会有亮斑聚在某个角上，看起来才像表面的受光边。
+   高度用百分比相对卡片自身，小卡片也不会被整块盖住。 */
+.card::after,
+.panel::after {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: var(--sx-sheen-h, 1px);
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: var(--sx-sheen);
+  transition: opacity 320ms ease;
+  background: linear-gradient(
+    to bottom,
+    color-mix(in oklab, var(--text) 14%, transparent),
+    transparent 100%
+  );
+  /* 用 mask 让左右两端淡出，避免反光在圆角处被切出硬边 */
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 12%, #000 88%, transparent);
+  mask-image: linear-gradient(to right, transparent, #000 12%, #000 88%, transparent);
+}
+
+/* 原有风格的悬停高光沿用旧行为（悬停才出现的一道细线） */
+[data-skin='classic'] .card:hover::after,
+[data-skin='classic'] .card--link:hover::after {
+  opacity: 0.85;
+}
+
+/* ---------------- 顶栏 ---------------- */
+.header--scrolled {
+  background: var(--sx-surface);
+  border-bottom: var(--sx-border-w) solid var(--sx-border);
+  backdrop-filter: blur(var(--sx-blur)) saturate(var(--sx-saturate));
+  -webkit-backdrop-filter: blur(var(--sx-blur)) saturate(var(--sx-saturate));
+  box-shadow: var(--sx-shadow);
+}
+
+/* ---------------- 按钮：质感跟随风格 ---------------- */
+.btn {
+  border-width: var(--sx-border-w);
+  border-color: var(--sx-border-hi);
+  transition:
+    transform 180ms var(--ease),
+    background 240ms ease,
+    border-color 240ms ease,
+    color 240ms ease,
+    box-shadow 240ms ease,
+    filter 240ms ease;
+}
+
+.btn:active:not(:disabled) { transform: scale(var(--sx-press)); }
+
+/* 实心按钮：再用风格变量叠一层材质 */
+.btn--solid,
+.btn--primary {
+  box-shadow: var(--sx-shadow);
+}
+
+.btn--solid:hover,
+.btn--primary:hover {
+  box-shadow: var(--sx-shadow-hi), 0 10px 28px -10px var(--accent-glow);
+}
+
+/* 亚克力 / 玻璃：按钮也做半透明，与卡片同材质 */
+[data-skin='acrylic'] .btn:not(.btn--solid):not(.btn--primary),
+[data-skin='liquid'] .btn:not(.btn--solid):not(.btn--primary) {
+  background: var(--sx-surface);
+  backdrop-filter: blur(var(--sx-blur)) saturate(var(--sx-saturate));
+  -webkit-backdrop-filter: blur(var(--sx-blur)) saturate(var(--sx-saturate));
+  box-shadow: var(--sx-inset);
+}
+
+/* Material：取消按钮的描边，改用状态层（更贴近 M3） */
+[data-skin='material'] .btn:not(.btn--solid):not(.btn--primary) {
+  background: color-mix(in oklab, var(--accent) 8%, transparent);
+  border-color: transparent;
+}
+[data-skin='material'] .btn:not(.btn--solid):not(.btn--primary):hover {
+  background: color-mix(in oklab, var(--accent) 14%, transparent);
+}
+
+/* ---------------- 输入框 / 表单 ---------------- */
+.field input,
+.field textarea,
+.input,
+.admin .input {
+  background: var(--sx-surface);
+  border: var(--sx-border-w) solid var(--sx-border);
+  border-radius: var(--sx-radius-sm);
+  backdrop-filter: blur(var(--sx-blur)) saturate(var(--sx-saturate));
+  -webkit-backdrop-filter: blur(var(--sx-blur)) saturate(var(--sx-saturate));
+  transition: border-color var(--dur) var(--ease), box-shadow var(--dur) var(--ease), background var(--dur) var(--ease);
+}
+
+.field input:focus,
+.field textarea:focus,
+.input:focus {
+  border-color: color-mix(in oklab, var(--accent) 60%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent) 18%, transparent);
+}
+
+/* Material：输入框用填充式（无边框 + 底部指示条） */
+[data-skin='material'] .field input,
+[data-skin='material'] .field textarea,
+[data-skin='material'] .input {
+  border-width: 0;
+  border-bottom: 1px solid var(--sx-border-hi);
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+}
+
+/* ---------------- 抽屉 / 弹层 ---------------- */
+.drawer {
+  background: var(--sx-surface);
+  backdrop-filter: blur(calc(var(--sx-blur) + 8px)) saturate(var(--sx-saturate));
+  -webkit-backdrop-filter: blur(calc(var(--sx-blur) + 8px)) saturate(var(--sx-saturate));
+  border-left: var(--sx-border-w) solid var(--sx-border);
+  box-shadow: var(--sx-shadow-hi);
+}
+
+/* ---------------- 分段控件 / 标签 ---------------- */
+.segmented__item.is-active {
+  box-shadow: var(--sx-shadow);
+}
+
+/* ============================================================
+ * 风格专属微调
+ * ============================================================ */
+
+/* 各风格的表面圆角
+   注意：这里用 --sx-radius，不直接改 --radius。
+   原因：用户在「外观设置」里调过圆角时，applyTheme() 会把 --radius
+   写成 html 的内联样式，内联样式优先级高于任何选择器，
+   直接改 --radius 会被静默覆盖，风格就形同虚设。
+   改用独立变量后：用户的显式选择（--radius）始终优先，
+   没调过时由风格给一个符合该设计体系的默认值。 */
+[data-skin='classic'] {
+  --sx-radius: var(--radius);
+  --sx-radius-sm: var(--radius-sm);
+}
+[data-skin='liquid'] {
+  --sx-radius: 20px;
+  --sx-radius-sm: 14px;
+}
+[data-skin='material'] {
+  --sx-radius: 16px;
+  --sx-radius-sm: 12px;
+}
+[data-skin='acrylic'] {
+  --sx-radius: 12px;
+  --sx-radius-sm: 8px;
+}
+
+/* ---------------- 降低动态偏好 ---------------- */
+@media (prefers-reduced-motion: reduce) {
+  .btn:active:not(:disabled) { transform: none; }
+}
+
+/* ---------------- 低端设备 / 不支持 backdrop-filter 的降级 ---------------- */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .card,
+  .panel,
+  .header--scrolled,
+  .drawer {
+    background: var(--bg-elev);
+  }
+}
+
+/* ============================================================
+ * 风格选择器（前台「外观设置」面板 + 管理端）
+ *
+ * 每张卡片里画一个微缩界面示意图，用纯 CSS 拼出该风格的关键特征：
+ *   亚克力   = 半透明磨砂块 + 细噪点
+ *   液态玻璃 = 强模糊 + 高光弧线
+ *   Material = 不透明色块 + 明显色阶 + 投影
+ *   原有     = 扁平细边框
+ * 预览块自身的质感由局部变量控制，不依赖当前站点皮肤，
+ * 所以无论站点当前是什么风格，四张卡片都能准确表达各自的样子。
+ * ============================================================ */
+
+.skin-hint {
+  margin: 0 0 12px;
+  font-size: 0.78rem;
+  line-height: 1.6;
+}
+.skin-hint--lock {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin: 10px 0 0;
+  color: var(--text-faint);
+}
+
+.skin-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+@media (max-width: 420px) {
+  .skin-grid { grid-template-columns: minmax(0, 1fr); }
+}
+
+.skin-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  padding: 10px;
+  text-align: left;
+  border: 1.5px solid var(--surface-line);
+  border-radius: 14px;
+  background: var(--bg-card);
+  cursor: pointer;
+  transition: border-color 200ms ease, background 200ms ease, transform 200ms ease;
+}
+.skin-card:hover:not(:disabled) {
+  border-color: var(--surface-line-strong);
+  background: var(--bg-card-hover);
+  transform: translateY(-1px);
+}
+.skin-card.is-active {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent) 16%, transparent);
+}
+.skin-card:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+.skin-card:disabled:hover { transform: none; }
+
+.skin-card__check {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+/* ---------------- 微缩预览 ---------------- */
+.skin-card__preview {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 14px 1fr 12px;
+  gap: 5px;
+  height: 76px;
+  padding: 7px;
+  border-radius: 10px;
+  overflow: hidden;
+  /* 预览用的中性底，避免受站点配色影响而看不出风格差异 */
+  background: #171c22;
+}
+
+.skin-card__bar {
+  grid-column: 1 / -1;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.09);
+}
+
+.skin-card__tile {
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.07);
+}
+.skin-card__tile--wide {
+  /* 让两块瓷砖错开，形成「主内容 + 侧栏」的感觉 */
+  grid-column: 2;
+  background: rgba(255, 255, 255, 0.05);
+}
+.skin-card__btn {
+  grid-column: 1 / -1;
+  border-radius: 999px;
+  background: linear-gradient(120deg, #6ee7b7, #34d399);
+}
+
+/* --- 亚克力：磨砂 + 噪点 --- */
+.skin-card--acrylic .skin-card__preview {
+  background: linear-gradient(135deg, #2b3a4a, #1a2530);
+}
+.skin-card--acrylic .skin-card__tile,
+.skin-card--acrylic .skin-card__bar {
+  background: rgba(255, 255, 255, 0.13);
+  backdrop-filter: blur(6px) saturate(1.6);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16);
+}
+.skin-card--acrylic .skin-card__preview::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.1;
+  /* 2px 网格 + 半透明圆点：比 3px 纯白点更接近磨砂质感，不会像格子布 */
+  background-image: radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.7) 0.5px, transparent 0.5px);
+  background-size: 2px 2px;
+}
+
+/* --- 液态玻璃：强模糊 + 高光弧 --- */
+.skin-card--liquid .skin-card__preview {
+  background: linear-gradient(150deg, #4a6d96, #21344a 55%, #16202c);
+}
+.skin-card--liquid .skin-card__tile,
+.skin-card--liquid .skin-card__bar {
+  background: rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(10px) saturate(2);
+  border: 1px solid rgba(255, 255, 255, 0.26);
+  border-radius: 8px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+.skin-card--liquid .skin-card__preview::after {
+  content: '';
+  position: absolute;
+  left: -30%;
+  top: -60%;
+  width: 90%;
+  height: 160%;
+  pointer-events: none;
+  background: radial-gradient(closest-side, rgba(255, 255, 255, 0.28), transparent 70%);
+  transform: rotate(24deg);
+}
+
+/* --- Material：不透明色块 + 色阶 + 投影 --- */
+.skin-card--material .skin-card__preview {
+  background: #f4f1f8;
+}
+.skin-card--material .skin-card__bar {
+  background: #d8d0e4;
+}
+.skin-card--material .skin-card__tile {
+  background: #e7e0f0;
+  box-shadow: 0 1px 2px rgba(40, 20, 70, 0.18);
+}
+.skin-card--material .skin-card__tile--wide {
+  background: #ded5ec;
+}
+.skin-card--material .skin-card__btn {
+  background: linear-gradient(120deg, #6750a4, #7f67be);
+}
+
+/* --- 原有：扁平细边框 --- */
+.skin-card--classic .skin-card__preview {
+  background: #10151b;
+}
+.skin-card--classic .skin-card__tile,
+.skin-card--classic .skin-card__bar {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+}
+
+/* ---------------- 文字 ---------------- */
+.skin-card__meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.skin-card__meta strong {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.86rem;
+  font-weight: 600;
+}
+.skin-card__plat {
+  font-style: normal;
+  font-size: 0.62rem;
+  font-family: var(--font-mono);
+  letter-spacing: 0.04em;
+  padding: 1px 5px;
+  border-radius: 4px;
+  color: var(--text-faint);
+  background: var(--bg-card);
+  border: 1px solid var(--surface-line);
+}
+.skin-card__meta small {
+  font-size: 0.73rem;
+  color: var(--text-faint);
+  line-height: 1.45;
+}
+
+/* 预览块里的模糊在低端设备上降级为纯色 */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .skin-card--acrylic .skin-card__tile,
+  .skin-card--acrylic .skin-card__bar { background: rgba(255, 255, 255, 0.22); }
+  .skin-card--liquid .skin-card__tile,
+  .skin-card--liquid .skin-card__bar { background: rgba(255, 255, 255, 0.3); }
+}

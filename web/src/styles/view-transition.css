@@ -1,0 +1,89 @@
+/* ============================================================
+ * 页面过渡（原生 View Transitions API）
+ *
+ * 原理：浏览器对旧页面拍快照 → 更新 DOM → 新页面淡入
+ * 优点：零 JS 开销、GPU 合成、不需要第三方动画库
+ * 降级：不支持的浏览器直接切换，无副作用
+ * ============================================================ */
+
+/* 根元素过渡：轻微缩放 + 淡入，避免生硬 */
+::view-transition-old(root) {
+  animation: vt-old 220ms cubic-bezier(0.4, 0, 1, 1) both;
+}
+::view-transition-new(root) {
+  animation: vt-new 340ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes vt-old {
+  to { opacity: 0; transform: scale(0.985); }
+}
+@keyframes vt-new {
+  from { opacity: 0; transform: scale(1.012) translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* ------------------------------------------------------------
+ * 点击特效层：跨页面过渡保持不变
+ *
+ * View Transitions 会把页面内容收进 ::view-transition 这棵 top-layer 伪元素树，
+ * 普通 body 子元素（包括特效覆盖层）不在其中，过渡期间会被新页面的快照盖住／裁掉，
+ * 表现就是「点顶栏切页时特效被截断」。
+ *
+ * 给特效层一个独立的 view-transition-name，让它作为单独一组参与过渡，
+ * 并且首尾完全一致（不平移、不淡出），视觉上就等于「特效一直在那儿」。
+ * 元素由 ba-click-fx 动态创建，选择器与 ClickEffect.jsx 里的一致。
+ * ------------------------------------------------------------ */
+body > div[aria-hidden="true"] {
+  view-transition-name: fx-overlay;
+}
+
+::view-transition-group(fx-overlay) {
+  animation: none;
+}
+
+::view-transition-old(fx-overlay),
+::view-transition-new(fx-overlay) {
+  animation: none;
+  /* 关键：不做交叉淡入，避免过渡期间特效忽明忽暗 */
+  mix-blend-mode: normal;
+  opacity: 1;
+}
+
+/* 顶部导航与背景不参与过渡，避免闪烁 */
+
+/* 尊重减少动画偏好 */
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none !important;
+  }
+}
+
+/* ============================================================
+ * 内容区细微动效（不依赖 View Transitions 的补充）
+ * ============================================================ */
+
+/* 卡片进入时的柔和上浮 */
+@keyframes vt-card-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* 侧栏 widget 依次滑入 */
+.home__aside > * {
+  animation: vt-card-in 520ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.home__aside > *:nth-child(1) { animation-delay: 40ms; }
+.home__aside > *:nth-child(2) { animation-delay: 110ms; }
+.home__aside > *:nth-child(3) { animation-delay: 180ms; }
+.home__aside > *:nth-child(4) { animation-delay: 250ms; }
+
+/* 导航栏：切换时高亮条平滑移动 */
+.nav__link {
+  transition: color 220ms ease, background 220ms ease, transform 220ms ease;
+}
+.nav__link:active { transform: scale(0.96); }
+
+@media (prefers-reduced-motion: reduce) {
+  .home__aside > * { animation: none !important; }
+}
